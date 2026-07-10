@@ -164,8 +164,54 @@ public class Main {
             System.out.println(e.getMessage() + "\n");
         }
     }
+private static void runConcurrencyDemo() {
+        System.out.print("Enter the ISBN of the book to race for: ");
+        String isbn = scanner.nextLine();
 
-    private static void runConcurrencyDemo() {
-        System.out.println("Concurrency demo coming next step.\n");
-    } 
+        try {
+            library.findBookByISBN(isbn); // fail fast with a clear message if it doesn't exist
+        } catch (BookNotFoundException e) {
+            System.out.println(e.getMessage() + "\n");
+            return;
+        }
+
+        // Two demo borrowers racing for the same book — using fixed IDs so
+        // this doesn't depend on borrowers already being registered
+        Borrower borrowerA = new Borrower("Demo User A", "DEMO-A");
+        Borrower borrowerB = new Borrower("Demo User B", "DEMO-B");
+        library.addBorrower(borrowerA);
+        library.addBorrower(borrowerB);
+
+        System.out.println("\nStarting concurrency demo: two threads racing for ISBN " + isbn + "\n");
+
+        Runnable attemptBorrow = () -> {
+            String threadName = Thread.currentThread().getName();
+            System.out.println("[" + threadName + "] Attempting to borrow...");
+            try {
+                library.borrowBook(isbn, threadName.equals("Thread-A") ? "DEMO-A" : "DEMO-B",
+                        java.time.LocalDate.now().toString());
+                System.out.println("[" + threadName + "] SUCCESS - book borrowed");
+            } catch (BookNotAvailableException e) {
+                System.out.println("[" + threadName + "] FAILED - " + e.getMessage());
+            }
+        };
+
+        Thread threadA = new Thread(attemptBorrow, "Thread-A");
+        Thread threadB = new Thread(attemptBorrow, "Thread-B");
+
+        threadA.start();
+        threadB.start();
+
+        // Wait for both threads to finish before returning to the menu,
+        // otherwise their output could print AFTER the next menu appears
+        try {
+            threadA.join();
+            threadB.join();
+        } catch (InterruptedException e) {
+            System.out.println("Demo interrupted.");
+        }
+
+        System.out.println("\nDemo complete. Exactly one thread should have succeeded.\n");
+    }
 }
+   
