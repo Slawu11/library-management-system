@@ -40,8 +40,16 @@ public class Borrower {
     public void addBorrowedBook(String isbn , String borrowDate){
         borrowedBookISBNs.add(isbn);
         borrowDates.add(borrowDate);
-    }
-      // Getters provide access to borrower data
+              // Getters provide access to borrower data
      // addBorrowedBook and returnBook manage the list of borrowed books
+    }
+
+   public void returnBook(String isbn) {
+    int index = borrowedBookISBNs.indexOf(isbn);
+    if (index != -1) {
+        borrowedBookISBNs.remove(index);
+        borrowDates.remove(index);
+    }
+}
 }
     
